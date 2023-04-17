@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <vector>
 
-std::vector<int> scan(std::vector<int> bucket) {
+std::vector<int> scan(std::vector<int>const & bucket) {
   int range = bucket.size();
   std::vector<int> offset(range,0);
 
