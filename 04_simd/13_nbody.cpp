@@ -25,7 +25,7 @@ inline void dump_avx(__m256 vec) {
 }
 
 int main() {
-  const int N = 8;
+  const int N = 20;
   float x[N], y[N], m[N], fx[N], fy[N];
   for(int i=0; i<N; i++) {
     x[i] = drand48();
@@ -33,20 +33,22 @@ int main() {
     m[i] = drand48();
     fx[i] = fy[i] = 0;
   }
+  int vec_N = N - N % 8;
   __m256 zeros = _mm256_setzero_ps();
   __m256 mins = _mm256_set1_ps(-FLT_MAX);
   for(int i=0; i<N; i++) {
     // N は 8 の倍数であると仮定する
-    for (int j=0; j<N; j+=8) {
+    int j;
+    for (j=0; j<vec_N; j+=8) {
 
       // rx, ry の計算
       __m256 rx_vec = _mm256_sub_ps(
         _mm256_set1_ps(x[i]),
-        _mm256_load_ps(x+j)  // todo
+        _mm256_load_ps(x+j)
       );
       __m256 ry_vec = _mm256_sub_ps(
         _mm256_set1_ps(y[i]),
-        _mm256_load_ps(y+j)  // todo
+        _mm256_load_ps(y+j)
       );
       // r の逆数の計算
       __m256 rr_vec = _mm256_rsqrt_ps(
@@ -56,7 +58,7 @@ int main() {
         )
       );
       // mの読み込み
-      __m256 m_vec = _mm256_load_ps(m+j);  // todo
+      __m256 m_vec = _mm256_load_ps(m+j);
       // fx, fy それぞれの減る分を計算
       __m256 delta_fx_vec = _mm256_mul_ps(
         _mm256_mul_ps(rx_vec, m_vec),
@@ -78,6 +80,15 @@ int main() {
       // fx[i], fy[i]に代入
       fx[i] -= sum_fx;
       fy[i] -= sum_fy;
+    }
+    for (; j<N; j++) {
+      if(i != j) {
+        float rx = x[i] - x[j];
+        float ry = y[i] - y[j];
+        float r = std::sqrt(rx * rx + ry * ry);
+        fx[i] -= rx * m[j] / (r * r * r);
+        fy[i] -= ry * m[j] / (r * r * r);
+      }
     }
   printf("%d %g %g\n",i,fx[i],fy[i]);
   }
